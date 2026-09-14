@@ -1,27 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { AppPhase, ChatSettings } from '@/types';
 import { loadSettings, saveSettings, clearSettings } from '@/lib/storage';
-import KanjiRain from '@/components/KanjiRain';
+import { getEnvSettings } from '@/lib/config';
+import SakeCascade from '@/components/SakeCascade';
 import Welcome from '@/components/Welcome';
 import Setup from '@/components/Setup';
 import ChatScreen from '@/components/ChatScreen';
 
+function resolveSettings(): ChatSettings | null {
+  const env = getEnvSettings();
+  const saved = loadSettings();
+  if (env) {
+    // APIキーは環境変数を正とし、会話の継続IDだけ引き継ぐ
+    return { ...env, conversationId: saved?.conversationId ?? '' };
+  }
+  if (saved && saved.difyApiKey && saved.difyApiUrl) return saved;
+  return null;
+}
+
 function App() {
   const [phase, setPhase] = useState<AppPhase>('welcome');
-  const [settings, setSettings] = useState<ChatSettings | null>(null);
-
-  useEffect(() => {
-    const saved = loadSettings();
-    if (saved && saved.difyApiKey && saved.difyApiUrl) {
-      setSettings(saved);
-      setPhase('chat');
-    }
-  }, []);
+  const [settings, setSettings] = useState<ChatSettings | null>(resolveSettings);
+  const envConfigured = getEnvSettings() !== null;
 
   const handleStart = () => {
-    const saved = loadSettings();
-    if (saved && saved.difyApiKey && saved.difyApiUrl) {
-      setSettings(saved);
+    const resolved = resolveSettings();
+    if (resolved) {
+      setSettings(resolved);
       setPhase('chat');
     } else {
       setPhase('setup');
@@ -51,8 +56,8 @@ function App() {
 
   return (
     <>
-      {/* Kanji rain on all screens for ambient atmosphere */}
-      <KanjiRain />
+      {/* 銘柄カスケード：全画面共通の演出。チャットではタップで質問できる */}
+      <SakeCascade variant={phase === 'chat' ? 'chat' : 'ambient'} />
 
       {phase === 'welcome' && <Welcome onStart={handleStart} />}
 
@@ -61,6 +66,7 @@ function App() {
       {phase === 'chat' && settings && (
         <ChatScreen
           settings={settings}
+          envConfigured={envConfigured}
           onUpdateSettings={handleUpdateSettings}
           onResetSettings={handleResetSettings}
         />

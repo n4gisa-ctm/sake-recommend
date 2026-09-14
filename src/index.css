@@ -16,8 +16,8 @@
 
 body {
   font-family: var(--font-sans);
-  color: #f0e8da;
-  background: #14110e;
+  color: #33302b;
+  background: #f6f1e6;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -80,33 +80,41 @@ body {
 .animate-glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
 .typing-dot { animation: dotBounce 1.4s infinite ease-in-out both; }
 
-/* ===== Kanji Rain ===== */
-.kanji-column {
+/* ===== Sake Cascade（銘柄名の滝） ===== */
+.sake-drop {
   position: absolute;
   top: 0;
+  writing-mode: vertical-rl;
   will-change: transform, opacity;
-  animation: kanjiFall linear infinite;
+  animation: kanjiFall linear infinite both;
   font-family: var(--font-serif);
-  text-align: center;
-  line-height: 1.6;
+  font-weight: 500;
+  letter-spacing: 0.15em;
   user-select: none;
   pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sake-drop {
+    display: none;
+  }
 }
 
 /* ===== Scrollbar ===== */
 .chat-scroll::-webkit-scrollbar { width: 4px; }
 .chat-scroll::-webkit-scrollbar-track { background: transparent; }
 .chat-scroll::-webkit-scrollbar-thumb {
-  background: rgba(201, 169, 110, 0.3);
+  background: rgba(44, 74, 124, 0.25);
   border-radius: 10px;
 }
 .chat-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 169, 110, 0.5);
+  background: rgba(44, 74, 124, 0.45);
 }
 
 /* ===== Shimmer text ===== */
 .shimmer-text {
-  background: linear-gradient(90deg, #d9b07a 0%, #f0e8da 25%, #d9b07a 50%, #f0e8da 75%, #d9b07a 100%);
+  background: linear-gradient(90deg, #2c4a7c 0%, #4a6ba0 25%, #2c4a7c 50%, #4a6ba0 75%, #2c4a7c 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -114,24 +122,24 @@ body {
   animation: shimmer 5s linear infinite;
 }
 
-/* ===== Glass effect (dark) ===== */
-.glass-dark {
-  background: rgba(20, 17, 14, 0.75);
+/* ===== Glass effect (washi) ===== */
+.glass-header {
+  background: rgba(246, 241, 230, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 .glass-panel {
-  background: rgba(30, 25, 20, 0.6);
+  background: rgba(253, 250, 243, 0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* ===== Dark gradient backgrounds ===== */
-.bg-dark-gradient {
-  background: linear-gradient(170deg, #1a1510 0%, #14110e 50%, #100d0a 100%);
+/* ===== Washi gradient backgrounds ===== */
+.bg-washi-gradient {
+  background: linear-gradient(170deg, #f9f4e9 0%, #f6f1e6 50%, #efe8d8 100%);
 }
-.bg-dark-radial {
-  background: radial-gradient(ellipse at 50% 0%, #2a1f15 0%, #14110e 60%, #0d0a08 100%);
+.bg-washi-radial {
+  background: radial-gradient(ellipse at 50% 0%, #fdfaf3 0%, #f6f1e6 60%, #efe8d8 100%);
 }
 
 /* ===== Shining border ===== */
@@ -144,7 +152,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201, 169, 110, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(44, 74, 124, 0.4), transparent);
   background-size: 200% auto;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
