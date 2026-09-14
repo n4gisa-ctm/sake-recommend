@@ -19,3 +19,12 @@ export interface ChatSettings {
   difyApiUrl: string;
   conversationId: string;
 }
+
+/** マイ酒ログの記録種別 */
+export type SakeStatus = 'interested' | 'liked' | 'disliked';
+
+export interface SakeLogEntry {
+  name: string;
+  status: SakeStatus;
+  addedAt: number;
+}

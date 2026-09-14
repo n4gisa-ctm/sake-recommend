@@ -1,8 +1,12 @@
-import type { ChatMessage } from '@/types';
+import type { ChatMessage, SakeStatus } from '@/types';
 import { User } from 'lucide-react';
+import { detectSakeNames } from '@/data/sakeNames';
+import SakeCards from './SakeCards';
 
 interface MessageBubbleProps {
   message: ChatMessage;
+  getStatus: (name: string) => SakeStatus | null;
+  onToggleStatus: (name: string, status: SakeStatus) => void;
 }
 
 /** Difyの返答に含まれる軽いMarkdown（**太字**・### 見出し）を整形する */
@@ -46,7 +50,7 @@ function renderContent(content: string) {
   });
 }
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
+export default function MessageBubble({ message, getStatus, onToggleStatus }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
   if (isUser) {
@@ -66,21 +70,27 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     );
   }
 
+  const mentionedSakes = detectSakeNames(message.content);
+
   return (
-    <div className="flex justify-start animate-slide-in-left">
-      <div className="flex items-start gap-2.5 max-w-[80%]">
-        <div
-          className="flex-shrink-0 w-9 h-9 rounded-full border border-ai-500/25 bg-washi-100 flex items-center justify-center mt-0.5 text-ai-600 text-lg font-bold"
-          style={{ fontFamily: 'var(--font-serif)' }}
-        >
-          酒
-        </div>
-        <div className="glass-panel text-sumi-700 rounded-2xl rounded-tl-md px-4 py-3 border border-ai-500/15 shadow-sm shadow-ai-800/5">
-          <p className="text-sm leading-relaxed">
-            {renderContent(message.content)}
-          </p>
+    <div className="animate-slide-in-left">
+      <div className="flex justify-start">
+        <div className="flex items-start gap-2.5 max-w-[80%]">
+          <div
+            className="flex-shrink-0 w-9 h-9 rounded-full border border-ai-500/25 bg-washi-100 flex items-center justify-center mt-0.5 text-ai-600 text-lg font-bold"
+            style={{ fontFamily: 'var(--font-serif)' }}
+          >
+            酒
+          </div>
+          <div className="glass-panel text-sumi-700 rounded-2xl rounded-tl-md px-4 py-3 border border-ai-500/15 shadow-sm shadow-ai-800/5">
+            <p className="text-sm leading-relaxed">
+              {renderContent(message.content)}
+            </p>
+          </div>
         </div>
       </div>
+      {/* 返答内で言及された実在銘柄のカード */}
+      <SakeCards sakes={mentionedSakes} getStatus={getStatus} onToggleStatus={onToggleStatus} />
     </div>
   );
 }

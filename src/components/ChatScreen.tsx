@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Settings, RotateCcw, AlertCircle, Wine } from 'lucide-react';
-import type { ChatMessage, ChatSettings } from '@/types';
+import { Send, Settings, RotateCcw, AlertCircle, Wine, BookOpen } from 'lucide-react';
+import type { ChatMessage, ChatSettings, SakeLogEntry, SakeStatus } from '@/types';
 import { streamDifyChat } from '@/lib/dify';
 import { generateId } from '@/lib/storage';
+import { loadLog, saveLog, toggleStatus, statusOf, buildPreferenceContext } from '@/lib/sakeLog';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import SakeLogPanel from './SakeLogPanel';
 
 interface ChatScreenProps {
   settings: ChatSettings;
@@ -49,6 +51,8 @@ export default function ChatScreen({
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [sakeLog, setSakeLog] = useState<SakeLogEntry[]>(loadLog);
+  const [showLogPanel, setShowLogPanel] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<boolean>(false);
@@ -78,11 +82,15 @@ export default function ChatScreen({
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setIsStreaming(true);
 
+    // マイ酒ログの好み傾向を質問に自動で添える（画面上のメッセージには表示しない）
+    const preference = buildPreferenceContext(sakeLog);
+    const query = preference ? `${text.trim()}\n\n${preference}` : text.trim();
+
     try {
       let accumulated = '';
       let newConvId = settings.conversationId;
 
-      for await (const chunk of streamDifyChat(settings, text.trim())) {
+      for await (const chunk of streamDifyChat(settings, query)) {
         if (abortRef.current) break;
         accumulated += chunk.delta;
         if (chunk.conversationId) newConvId = chunk.conversationId;
@@ -126,6 +134,22 @@ export default function ChatScreen({
     onUpdateSettings({ ...settings, conversationId: '' });
   };
 
+  const handleToggleStatus = (name: string, status: SakeStatus) => {
+    setSakeLog((prev) => {
+      const next = toggleStatus(prev, name, status);
+      saveLog(next);
+      return next;
+    });
+  };
+
+  const handleRemoveLog = (name: string) => {
+    setSakeLog((prev) => {
+      const next = prev.filter((e) => e.name !== name);
+      saveLog(next);
+      return next;
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(input);
@@ -158,7 +182,19 @@ export default function ChatScreen({
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative flex items-center gap-2">
+          <button
+            onClick={() => setShowLogPanel(true)}
+            className="relative w-10 h-10 rounded-full bg-washi-50/70 border border-ai-500/20 flex items-center justify-center transition-all hover:scale-105 hover:border-ai-500/40"
+            title="マイ酒ログ"
+          >
+            <BookOpen size={18} className="text-ai-600/80" />
+            {sakeLog.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-ai-600 text-washi-50 text-[10px] font-bold flex items-center justify-center">
+                {sakeLog.length}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setShowSettingsMenu((s) => !s)}
             className="w-10 h-10 rounded-full bg-washi-50/70 border border-ai-500/20 flex items-center justify-center transition-all hover:scale-105 hover:border-ai-500/40"
@@ -237,7 +273,14 @@ export default function ChatScreen({
             </div>
           )}
 
-          {hasMessages && messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)}
+          {hasMessages && messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              getStatus={(name) => statusOf(sakeLog, name)}
+              onToggleStatus={handleToggleStatus}
+            />
+          ))}
 
           {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && <TypingIndicator />}
 
@@ -280,6 +323,15 @@ export default function ChatScreen({
           <p className="text-center text-sumi-300/80 text-xs mt-2">Enterで送信 / Shift+Enterで改行</p>
         </div>
       </div>
+
+      {/* マイ酒ログ（味覚マップ＋記録一覧） */}
+      {showLogPanel && (
+        <SakeLogPanel
+          log={sakeLog}
+          onRemove={handleRemoveLog}
+          onClose={() => setShowLogPanel(false)}
+        />
+      )}
     </div>
   );
 }
